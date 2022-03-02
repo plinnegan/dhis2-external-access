@@ -28,8 +28,8 @@ function generateSecret() {
   const charsLength = chars.length
   const makeId = (length) => {
     let result = ''
-    for (let i = 0; i < length, i++; ) {
-      result += characters.charAt(Math.floor(Math.random() * charsLength))
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * charsLength))
     }
     return result
   }
@@ -42,20 +42,27 @@ function generateSecret() {
  * @param {String} basicAuth encoded username and password
  * @returns {String} A secret string use to request a bearer token with the clients credentials
  */
-async function setupOAth(baseUrl, basicAuth) {
+async function setupOAuth(baseUrl, basicAuth) {
   const payload = {
     name: 'Metadata link script',
     cid: oAuthCid,
     grantTypes: ['refresh_token'],
     secret: generateSecret(),
   }
-  const res = await fetch(`${baseUrl}/api/oAuth2Clients`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${basicAuth}`,
-    },
-    data: JSON.stringify(payload),
-  })
+  try {
+    const req = await fetch(`${baseUrl}/api/oAuth2Clients`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${basicAuth}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    const res = await req.json()
+    console.log('Created new OAuth: ', res)
+  } catch (e) {
+    throw `Error creating noew OAuth on ${baseUrl}`
+  }
 }
 
 /**
@@ -79,7 +86,7 @@ async function getSecret(baseUrl, basicAuth) {
     if (oAuthClients.length == 1) {
       return oAuthClients[0].secret
     } else {
-      const newSecret = await setupOAth(baseUrl, basicAuth)
+      const newSecret = await setupOAuth(baseUrl, basicAuth)
       return newSecret
     }
   } catch (e) {
@@ -98,10 +105,11 @@ async function getSecret(baseUrl, basicAuth) {
 async function getToken(baseUrl, username, password, secret) {
   const req = await fetch(`${baseUrl}/uaa/oauth/token`, {
     method: 'POST',
+    mode: 'cors',
     headers: {
       Authorization: `Basic ${oAuthCid + ':' + secret}`,
     },
-    data: JSON.stringify({ username, password, grantType: 'password' }),
+    body: JSON.stringify({ username, password, grantType: 'password' }),
   })
   const res = await req.json()
   if ('access_token' in res && 'refresh_token' in res) {

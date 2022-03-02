@@ -2,3 +2,4 @@ node_modules
 .d2
 src/locales
 build
+.DS_Store
