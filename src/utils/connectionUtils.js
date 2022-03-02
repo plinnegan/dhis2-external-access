@@ -105,11 +105,11 @@ async function getSecret(baseUrl, basicAuth) {
 async function getToken(baseUrl, username, password, secret) {
   const req = await fetch(`${baseUrl}/uaa/oauth/token`, {
     method: 'POST',
-    mode: 'cors',
     headers: {
-      Authorization: `Basic ${oAuthCid + ':' + secret}`,
+      Accept: 'application/json',
+      Authorization: `Basic ${btoa(oAuthCid + ':' + secret)}`,
     },
-    body: JSON.stringify({ username, password, grantType: 'password' }),
+    body: JSON.stringify({ username, password, grant_type: 'password' }),
   })
   const res = await req.json()
   if ('access_token' in res && 'refresh_token' in res) {
